@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Financial Chatbot</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #f5f2eb;
+      --cream:     #faf8f3;
+      --dark:      #1a1812;
+      --mid:       #6b6455;
+      --border:    #ddd8ce;
+      --accent:    #c8410a;
+      --accent-lt: #f5e8e2;
+      --green:     #2d6a4f;
+      --green-lt:  #e8f5ee;
+      --shadow:    rgba(26,24,18,0.08);
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--dark);
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      grid-template-rows: 1fr;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ── */
+    aside {
+      background: var(--dark);
+      color: #f5f2eb;
+      display: flex;
+      flex-direction: column;
+      padding: 28px 20px;
+      gap: 28px;
+      border-right: 1px solid #2e2b24;
+      animation: slideIn 0.4s ease;
+    }
+    @keyframes slideIn { from{transform:translateX(-20px);opacity:0} to{transform:translateX(0);opacity:1} }
+
+    .brand {
+      display: flex; align-items: center; gap: 10px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #2e2b24;
+    }
+    .brand-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'DM Serif Display', serif;
+      font-size: 16px; color: white;
+    }
+    .brand-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: 17px; letter-spacing: 0.2px;
+      line-height: 1.2;
+    }
+    .brand-name span { display: block; font-family: 'DM Mono', monospace; font-size: 10px; color: #8a8070; font-style: normal; margin-top: 2px; }
+
+    .sidebar-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px; letter-spacing: 1.5px;
+      color: #6b6455; text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .companies { display: flex; flex-direction: column; gap: 6px; }
+    .company-tag {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; border-radius: 8px;
+      background: #24211c; font-size: 13px;
+      transition: background 0.2s;
+    }
+    .company-tag:hover { background: #2e2b24; }
+    .company-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }
+    .company-tag .years { margin-left: auto; font-family: 'DM Mono', monospace; font-size: 10px; color: #6b6455; }
+
+    .queries-list { display: flex; flex-direction: column; gap: 4px; }
+    .query-btn {
+      text-align: left; background: transparent;
+      border: 1px solid transparent;
+      border-radius: 7px; padding: 8px 10px;
+      color: #b8b0a0; font-family: 'DM Sans', sans-serif;
+      font-size: 12px; cursor: pointer; line-height: 1.4;
+      transition: all 0.15s;
+    }
+    .query-btn:hover {
+      background: #24211c; border-color: #3a3628;
+      color: #f5f2eb;
+    }
+    .query-btn::before { content: '→ '; font-family: 'DM Mono', monospace; color: var(--accent); opacity: 0.7; }
+
+    .sidebar-footer {
+      margin-top: auto;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px; color: #4a4438;
+      line-height: 1.6;
+    }
+
+    /* ── Main ── */
+    main {
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      background: var(--cream);
+    }
+
+    /* Top bar */
+    .topbar {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--cream);
+      flex-shrink: 0;
+    }
+    .topbar-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 20px; color: var(--dark);
+    }
+    .topbar-title span { color: var(--accent); }
+    .status {
+      display: flex; align-items: center; gap: 6px;
+      font-family: 'DM Mono', monospace; font-size: 11px; color: var(--green);
+      background: var(--green-lt); padding: 5px 10px; border-radius: 20px;
+    }
+    .status-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* Chat area */
+    #chat-box {
+      flex: 1; overflow-y: auto;
+      padding: 28px 28px 16px;
+      display: flex; flex-direction: column; gap: 20px;
+      scroll-behavior: smooth;
+    }
+    #chat-box::-webkit-scrollbar { width: 4px; }
+    #chat-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .message {
+      display: flex; gap: 12px; align-items: flex-start;
+      animation: popIn 0.25s ease;
+      max-width: 100%;
+    }
+    @keyframes popIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+    .message.user { flex-direction: row-reverse; align-self: flex-end; max-width: 70%; }
+    .message.bot  { align-self: flex-start; max-width: 85%; }
+
+    .avatar {
+      width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500;
+    }
+    .bot .avatar  { background: var(--dark); color: var(--bg); }
+    .user .avatar { background: var(--accent); color: white; }
+
+    .bubble {
+      padding: 12px 16px; border-radius: 12px;
+      font-size: 13.5px; line-height: 1.65;
+    }
+    .bot .bubble {
+      background: white;
+      border: 1px solid var(--border);
+      border-top-left-radius: 3px;
+      box-shadow: 0 2px 8px var(--shadow);
+      white-space: pre-wrap;
+      font-family: 'DM Mono', monospace;
+      font-size: 12.5px;
+    }
+    .user .bubble {
+      background: var(--accent);
+      color: white;
+      border-top-right-radius: 3px;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .timestamp {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px; color: var(--mid);
+      margin-top: 4px;
+      padding: 0 4px;
+    }
+    .message.user .timestamp { text-align: right; }
+
+    /* Typing */
+    .typing-dots { display: flex; gap: 4px; padding: 4px 2px; align-items: center; }
+    .typing-dots span {
+      width: 5px; height: 5px; border-radius: 50%; background: var(--mid);
+      animation: dot 1.2s ease-in-out infinite;
+    }
+    .typing-dots span:nth-child(2){animation-delay:.2s}
+    .typing-dots span:nth-child(3){animation-delay:.4s}
+    @keyframes dot{0%,80%,100%{opacity:.2;transform:scale(0.8)}40%{opacity:1;transform:scale(1)}}
+
+    /* Input */
+    .input-area {
+      padding: 16px 24px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--cream);
+      flex-shrink: 0;
+    }
+    .input-row {
+      display: flex; gap: 10px; align-items: center;
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 6px 6px 6px 16px;
+      transition: border-color 0.2s;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+    .input-row:focus-within { border-color: var(--accent); }
+
+    #user-input {
+      flex: 1; border: none; outline: none; background: transparent;
+      font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--dark);
+      padding: 6px 0;
+    }
+    #user-input::placeholder { color: #b8b0a0; }
+
+    #send-btn {
+      background: var(--accent); border: none;
+      width: 36px; height: 36px; border-radius: 8px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.2s, transform 0.1s;
+      flex-shrink: 0;
+    }
+    #send-btn:hover { opacity: 0.85; }
+    #send-btn:active { transform: scale(0.93); }
+    #send-btn svg { fill: white; }
+
+    .input-hint {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px; color: #b8b0a0;
+      margin-top: 8px; text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside>
+  <div class="brand">
+    <div class="brand-icon">F</div>
+    <div class="brand-name">
+      FinBot
+      <span>10-K ANALYSER</span>
+    </div>
+  </div>
+
+  <div>
+    <div class="sidebar-label">Coverage</div>
+    <div class="companies">
+      <div class="company-tag">
+        <div class="company-dot" style="background:#555eee"></div>
+        Apple
+        <span class="years">FY23–25</span>
+      </div>
+      <div class="company-tag">
+        <div class="company-dot" style="background:#00a86b"></div>
+        Microsoft
+        <span class="years">FY23–25</span>
+      </div>
+      <div class="company-tag">
+        <div class="company-dot" style="background:#e31937"></div>
+        Tesla
+        <span class="years">FY23–25</span>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="sidebar-label">Predefined Queries</div>
+    <div class="queries-list">
+      <button class="query-btn" onclick="fillInput(this)">What is the total revenue?</button>
+      <button class="query-btn" onclick="fillInput(this)">How has net income changed over the years?</button>
+      <button class="query-btn" onclick="fillInput(this)">What is the net profit margin?</button>
+      <button class="query-btn" onclick="fillInput(this)">Which company has the highest revenue?</button>
+      <button class="query-btn" onclick="fillInput(this)">What is the revenue growth?</button>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    Data source: SEC 10-K Filings<br>
+    All figures in USD millions<br>
+    FY 2023 · 2024 · 2025
+  </div>
+</aside>
+
+<!-- Main chat -->
+<main>
+  <div class="topbar">
+    <div class="topbar-title">Financial <span>Analyst</span></div>
+    <div class="status"><div class="status-dot"></div> Model Active</div>
+  </div>
+
+  <div id="chat-box">
+    <div class="message bot">
+      <div class="avatar">AI</div>
+      <div>
+        <div class="bubble">Welcome! I can answer questions about Apple, Microsoft, and Tesla's financials from FY2023–2025.
+
+Click a query on the left or type your own question below.</div>
+        <div class="timestamp">just now</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-area">
+    <div class="input-row">
+      <input id="user-input" type="text" placeholder="Ask a financial question..." autocomplete="off"/>
+      <button id="send-btn" onclick="sendMessage()">
+        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+      </button>
+    </div>
+    <div class="input-hint">Press Enter to send · Click a query on the left for exact matches</div>
+  </div>
+</main>
+
+<script>
+  const input   = document.getElementById('user-input');
+  const chatBox = document.getElementById('chat-box');
+
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+
+  function now() {
+    return new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  }
+
+  function fillInput(el) {
+    input.value = el.textContent.replace('→ ', '').trim();
+    sendMessage();
+  }
+
+  function addMessage(text, role) {
+    const wrap = document.createElement('div');
+    wrap.className = `message ${role}`;
+
+    const av = document.createElement('div');
+    av.className = 'avatar';
+    av.textContent = role === 'bot' ? 'AI' : 'YOU';
+
+    const inner = document.createElement('div');
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = text;
+
+    const ts = document.createElement('div');
+    ts.className = 'timestamp';
+    ts.textContent = now();
+
+    inner.appendChild(bubble);
+    inner.appendChild(ts);
+    wrap.appendChild(av);
+    wrap.appendChild(inner);
+    chatBox.appendChild(wrap);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  function showTyping() {
+    const wrap = document.createElement('div');
+    wrap.className = 'message bot'; wrap.id = 'typing';
+    wrap.innerHTML = `<div class="avatar">AI</div><div class="bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+    chatBox.appendChild(wrap);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  async function sendMessage() {
+    const msg = input.value.trim();
+    if (!msg) return;
+    input.value = '';
+    addMessage(msg, 'user');
+    showTyping();
+    try {
+      const res  = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg })
+      });
+      const data = await res.json();
+      document.getElementById('typing')?.remove();
+      addMessage(data.reply, 'bot');
+    } catch {
+      document.getElementById('typing')?.remove();
+      addMessage('Error: Could not reach the server.', 'bot');
+    }
+  }
+</script>
+</body>
+</html>
